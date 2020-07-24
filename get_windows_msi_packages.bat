@@ -1,27 +1,30 @@
-@echo off
-
 set REG_KEY=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\
 set REG_WOW_KEY=HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\
 
 setlocal ENABLEDELAYEDEXPANSION
 
-rem from https://docs.microsoft.com/en-us/archive/blogs/david.wang/howto-detect-process-bitness
+rem OS bittness detection is taken from:
+rem https://docs.microsoft.com/en-us/archive/blogs/david.wang/howto-detect-process-bitness
 
 IF /I "%PROCESSOR_ARCHITECTURE%" == "amd64" (
   echo OS is 64bit
+  echo Collecting 64bit packages info
   CALL :print_uninstall_from %REG_KEY% 64bit
+  echo Collecting 32bit packages info.
   CALL :print_uninstall_from %REG_WOW_KEY% 32bit
 ) ELSE (
   IF /I "%PROCESSOR_ARCHITEW6432%" == "amd64" (
     echo OS is 64bit running 32bit
+    echo Collecting 32bit packages info.
     CALL :print_uninstall_from %REG_KEY% 32bit
   ) ELSE (
-    rem echo OS is 32bit
+    echo OS is 32bit
+    echo Collecting 32bit packages info.
     CALL :print_uninstall_from %REG_KEY% 32bit
   )
 )
 
-goto :eof
+goto :after_print_uninstall_from
 
 :print_uninstall_from
 SETLOCAL
@@ -47,12 +50,19 @@ FOR /F "usebackq delims=" %%a IN (`reg query %arg1%`) DO (
   )
 
   IF NOT [!display_name!] == [] (
-    echo|set /p="Package (%arg2%): !display_name! " 
+    echo|set /p="Package (%arg2%): !display_name! "
     IF NOT [!display_version!] == [] (
-      rem echo set /p =" a " 
+      rem echo set /p =" a "
       echo|set /p =Version: !display_version!
     )
     echo:
   )
+  rem echo|set /p="."
 )
+
+rem echo .
+
 ENDLOCAL
+EXIT /b
+
+:after_print_uninstall_from
